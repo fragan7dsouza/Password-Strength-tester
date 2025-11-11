@@ -1,18 +1,22 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify 
 from password_checker import check_password_strength
+from werkzeug.wrappers import Request, Response 
 
-app = Flask(__name__)
+def handler(request: Request, response: Response):
+    """
+    Vercel handler function. Routes POST request to check() function.
+    """
+    if request.method == "POST":
+        return check()
 
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/check", methods=["POST"])
+    response.status = 405
+    response.headers["Content-Type"] = "application/json"
+    response.end(jsonify({"error": "Method not allowed"}))
 def check():
-    data = request.get_json()
-    password = data.get("password", "")
-    result = check_password_strength(password)
-    return jsonify(result)
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    app = Flask(__name__)
+    with app.app_context():
+        data = request.get_json(silent=True)
+        password = data.get("password", "")
+        
+        result = check_password_strength(password)
+        return jsonify(result)
